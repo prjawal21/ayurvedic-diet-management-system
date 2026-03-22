@@ -7,11 +7,7 @@ const foodSchema = new mongoose.Schema({
         trim: true,
         unique: true
     },
-    category: {
-        type: String,
-        required: [true, 'Please provide food category'],
-        enum: ['Grain', 'Vegetable', 'Fruit', 'Dairy', 'Legume', 'Fat', 'Nut', 'Seed', 'Spice', 'Herb']
-    },
+    category: { type: String, default: 'Other' },
     meal_type: {
         type: String,
         required: [true, 'Please provide meal type'],
@@ -28,17 +24,9 @@ const foodSchema = new mongoose.Schema({
         enum: ['Low', 'Medium', 'High']
 
     },
-    virya: {
-        type: String,
-        required: [true, 'Please provide virya (potency)'],
-        enum: ['Warming', 'Cooling']
-    },
+    virya: { type: String, enum: ['Warming', 'Cooling'], required: false },
     // Nutrition per 100g
-    energy: {
-        type: Number,
-        required: [true, 'Please provide energy (kcal per 100g)'],
-        min: 0
-    },
+    energy: { type: Number, default: 0 },
     calories: {
         type: Number,
         default: 0
@@ -68,12 +56,7 @@ const foodSchema = new mongoose.Schema({
         min: 0,
         default: 0
     },
-    glycemic_index: {
-        type: Number,
-        required: [true, 'Please provide glycemic index'],
-        min: 0,
-        max: 100
-    },
+    glycemic_index: { type: Number, default: 0 },
     source: {
         type: String,
         required: [true, 'Please provide data source'],
