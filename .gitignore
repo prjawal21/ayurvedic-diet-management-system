@@ -44,7 +44,7 @@ probe_*.js
 Thumbs.db
 ehthumbs.db
 
-# ── IDE & editor ───────────────────────────────────────────
+# ── IDE & editor ───────────────────────────────────────
 .vscode/
 .idea/
 *.swp
