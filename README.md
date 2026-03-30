@@ -190,12 +190,6 @@ Frontend runs at: `http://localhost:5173`
 
 ---
 
-## 📝 License
-
-MIT License - Built for Smart India Hackathon 2025
-
----
-
 ## 🙏 Acknowledgments
 
 - **Ministry of Ayush** & **All India Institute of Ayurveda (AIIA)**
