@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 
 const AddFoodPage = () => {
     const navigate = useNavigate();
@@ -43,13 +43,10 @@ const AddFoodPage = () => {
         setSuccess('');
         
         try {
-            const token = localStorage.getItem('token');
             // Clean up empty optional fields
             const payload = { ...formData };
 
-            await axios.post('http://localhost:5000/api/foods', payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('/api/foods', payload);
             
             setSuccess('Food item added successfully!');
             setTimeout(() => {

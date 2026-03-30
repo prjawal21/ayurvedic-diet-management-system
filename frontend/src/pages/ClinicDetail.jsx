@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 
 const ClinicDetail = () => {
     const { clinicId } = useParams();
@@ -40,10 +40,7 @@ const ClinicDetail = () => {
 
     const fetchClinicDetail = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5000/admin/clinic/${clinicId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`/admin/clinic/${clinicId}`);
             setClinic(response.data.data.clinic);
             setUsers(response.data.data.users);
             setClinicFormData({
@@ -72,12 +69,7 @@ const ClinicDetail = () => {
         e.preventDefault();
         setError('');
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                'http://localhost:5000/admin/create-user',
-                { ...userFormData, clinicId },
-                { headers: { 'Authorization': `Bearer ${token}` } }
-            );
+            await api.post('/admin/create-user', { ...userFormData, clinicId });
             setShowAddUserForm(false);
             setUserFormData({
                 name: '', email: '', role: 'DOCTOR', phone: '',
@@ -93,12 +85,7 @@ const ClinicDetail = () => {
         e.preventDefault();
         setError('');
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                `http://localhost:5000/admin/clinic/${clinicId}`,
-                clinicFormData,
-                { headers: { 'Authorization': `Bearer ${token}` } }
-            );
+            await api.put(`/admin/clinic/${clinicId}`, clinicFormData);
             setShowEditClinicForm(false);
             fetchClinicDetail();
         } catch (err) {
@@ -109,10 +96,7 @@ const ClinicDetail = () => {
     const handleDeleteUser = async (userId) => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/admin/user/${userId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.delete(`/admin/user/${userId}`);
             fetchClinicDetail();
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to delete user');
@@ -122,10 +106,7 @@ const ClinicDetail = () => {
     const handleDeleteClinic = async () => {
         if (!window.confirm('Are you sure you want to delete this clinic? This action cannot be undone.')) return;
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/admin/clinic/${clinicId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.delete(`/admin/clinic/${clinicId}`);
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to delete clinic');
@@ -137,10 +118,7 @@ const ClinicDetail = () => {
             setRevealedCredentials({ ...revealedCredentials, [userId]: false });
         } else {
             try {
-                const token = localStorage.getItem('token');
-                const response = await axios.get(`http://localhost:5000/admin/user/${userId}/credentials`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get(`/admin/user/${userId}/credentials`);
                 setCredentialsData({ ...credentialsData, [userId]: response.data.data });
                 setRevealedCredentials({ ...revealedCredentials, [userId]: true });
             } catch (err) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 import { useAuth } from '../context/AuthContext';
 
 const AdminDashboard = () => {
@@ -25,12 +25,7 @@ const AdminDashboard = () => {
 
     const fetchClinics = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:5000/admin/clinics', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.get('/admin/clinics');
             setClinics(response.data.data);
             setTotalDoctors(response.data.totalDoctors ?? 0);
         } catch (err) {
@@ -52,16 +47,7 @@ const AdminDashboard = () => {
         setError('');
 
         try {
-            const token = localStorage.getItem('token');
-            await axios.post(
-                'http://localhost:5000/admin/create-clinic',
-                clinicFormData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                }
-            );
+            await api.post('/admin/create-clinic', clinicFormData);
 
             setShowCreateClinicForm(false);
             setClinicFormData({ name: '', address: '', phone: '', email: '' });
