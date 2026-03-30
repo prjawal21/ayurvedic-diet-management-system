@@ -4,6 +4,10 @@
 
 Built for Smart India Hackathon 2025 (Problem Statement ID: 25024) under the Ministry of Ayush / All India Institute of Ayurveda (AIIA). Category: MedTech / HealthTech / Software.
 
+### 🔗 Live Site: [ayurvedic-diet-management-system.vercel.app](https://ayurvedic-diet-management-system.vercel.app)
+
+- **For demo access, contact me at prajwalp2125@gmail.com**
+
 ---
 
 ## 🌟 Features
