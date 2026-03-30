@@ -49,3 +49,11 @@ ehthumbs.db
 .idea/
 *.swp
 *.swo
+
+# ── Deployment config & Local files ────────────────────
+render.yaml
+vercel.json
+frontend/vercel.json
+clean.ps1
+tree.txt
+project documents/
