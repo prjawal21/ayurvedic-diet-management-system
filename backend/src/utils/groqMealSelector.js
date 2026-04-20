@@ -15,7 +15,7 @@ async function selectMealsWithGrok(patientContext, mealCandidates, season) {
             baseURL: 'https://api.groq.com/openai/v1',
         });
 
-        const systemPrompt = `You are an Ayurvedic clinical dietitian. Select appropriate foods for each meal slot based on the patient's prakriti, season, and Ayurvedic principles. Respond only with valid JSON structured exactly like {"breakfast":["id1"],"midMorningSnack":["id2"],"lunch":["id3"],"eveningSnack":["id4"],"dinner":["id5"],"reasoning":"..."}. Snack slots must contain only whole fruits, nuts, or raw vegetables — never fats, oils, dairy, grains, or spices.`;
+        const systemPrompt = `You are a strict Ayurvedic clinical dietitian. Select appropriate foods for each meal slot based ONLY on the patient's prakriti, season, and Ayurvedic principles. You MUST strictly obey the season. If a food is completely out of season (e.g. mango or watermelon in winter), absolutely DO NOT include it, even if it is in the candidate list. Respond only with valid JSON structured exactly like {"breakfast":["id1"],"midMorningSnack":["id2"],"lunch":["id3"],"eveningSnack":["id4"],"dinner":["id5"],"reasoning":"..."}. Snack slots must contain only whole fruits, nuts, or raw vegetables — never fats, oils, dairy, grains, or spices.`;
 
         const slim = (foods) => foods.slice(0, 20).map(f => `[id: ${f._id}, ${f.name}, ${f.rasa?.length ? f.rasa.join(', ') : 'Unknown'}, ${f.virya || 'Unknown'}]`).join(', ');
 
@@ -53,12 +53,13 @@ STRICT RULES — you must follow these exactly:
 6. Snacks must be whole edible foods only — fruits, nuts, seeds, vegetables. Never select oils, spices, or raw grains as snacks.
 7. Never select cooking oils (coconut oil, sesame oil, mustard oil) as standalone meal items — these are condiments only
 8. Never select raw spices (coriander seeds, cumin, turmeric) as standalone snack items — these are condiments only
-9. Every meal slot must have at least the minimum number of foods — if you cannot find enough suitable candidates, pick the best available options
-10. Vary the food types across meals — do not repeat the same food category in consecutive meals
+9. SEASONAL COMPLIANCE IS MANDATORY. If the season is winter (Hemanta, Shishira), DO NOT select summer fruits like Mango or Watermelon. If you do, the patient may fall ill. Choose foods that match the ambient season.
+10. Every meal slot must have at least the minimum number of foods — if you cannot find enough suitable candidates, pick the best available options that do not violate the season rule.
+11. Vary the food types across meals — do not repeat the same food category in consecutive meals.
 
 You MUST return all 5 keys in your JSON response: breakfast, midMorningSnack, lunch, eveningSnack, dinner.
 Each must contain an array of food IDs — never an empty array.
-If dinner candidates seem limited, pick the best available whole foods from the list regardless of perfect dosha match.`;
+If dinner candidates seem limited, pick the best available whole foods from the list regardless of perfect dosha match, but STILL RESPECT THE SEASON.`;
 
         console.log(`🧠 Calling Groq API (${model}) for meal selection...`);
         

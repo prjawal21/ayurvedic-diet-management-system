@@ -188,12 +188,27 @@ const selectMealFoods = (allFoods, targetCalories, mealType, prakriti, agniLevel
     const selectedFoods = [];
     let currentCalories = 0;
 
+    // Within-meal deduplication helpers
+    const mealCategoryCount = {};      // category → count
+    const mealNamePrefixes = new Set(); // first 2 words of food name → prevent near-duplicates
+    const getNamePrefix = (name) => name.toLowerCase().split(' ').slice(0, 2).join(' ');
+
     for (const food of shuffledCandidates) {
         if (selectedFoods.length >= maxFoodsForMeal) break;
         if (currentCalories >= targetCalories && selectedFoods.length >= minFoods) break;
 
+        // Skip if same 2-word name prefix already in this meal (e.g. "masala chai" appearing 3 times)
+        const prefix = getNamePrefix(food.name);
+        if (mealNamePrefixes.has(prefix)) continue;
+
+        // Allow at most 2 foods from the same category per meal (prevents all-beverage breakfast)
+        const catCount = mealCategoryCount[food.category] || 0;
+        if (catCount >= 2) continue;
+
         selectedFoods.push(food);
         currentCalories += (food.calories || food.energy || 0);
+        mealNamePrefixes.add(prefix);
+        mealCategoryCount[food.category] = catCount + 1;
 
         if (food.virya === 'Warming') dailyViryaTracker.warming++;
         if (food.virya === 'Cooling') dailyViryaTracker.cooling++;
@@ -372,7 +387,37 @@ const generateDietPlan = (patient, allFoods, severity = 'Moderate', season = nul
 
     let filteredFoods = allFoods;
     if (patient.dietaryPreference === 'Veg') {
-        filteredFoods = filteredFoods.filter(f => f.category !== 'Meat');
+        // Meat maps to 'Poultry Products' and 'Finfish and Shellfish Products' after CSV import
+        const NON_VEG_CATEGORIES = ['Poultry Products', 'Finfish and Shellfish Products', 'Meat', 'Beef Products', 'Pork Products', 'Lamb, Veal, and Game Products'];
+        filteredFoods = filteredFoods.filter(f => !NON_VEG_CATEGORIES.includes(f.category));
+    }
+
+    // ── Season filtering: keep foods that match the patient's current season ───
+    // Foods with season 'all' or no season field are always included.
+    // This ensures a summer patient gets cooling foods and a winter patient gets warming foods.
+    if (season) {
+        const seasonKey = season.toLowerCase(); // e.g. 'Grishma' → map to 'summer'
+        // Map Ayurvedic season names to simple strings stored in food.season
+        const SEASON_REMAP = {
+            grishma: 'summer', sharad: 'summer',          // hot/cooling seasons
+            hemanta: 'winter', shishira: 'winter',        // cold seasons
+            vasanta: 'summer', varsha: 'summer',           // transitional (lean warm)
+        };
+        const simpleSeasonKey = SEASON_REMAP[seasonKey] || seasonKey; // 'summer' | 'winter' | ...
+
+        const seasonFilteredFoods = filteredFoods.filter(f => {
+            const foodSeasons = f.season || ['all'];
+            // Include if food has 'all' or matching season
+            return foodSeasons.includes('all') || foodSeasons.includes(simpleSeasonKey);
+        });
+
+        // Only apply the season filter if it doesn't wipe out the food pool (<20 foods would be too restrictive)
+        if (seasonFilteredFoods.length >= 20) {
+            console.log(`🌿 Season filter applied (${simpleSeasonKey}): ${filteredFoods.length} → ${seasonFilteredFoods.length} foods`);
+            filteredFoods = seasonFilteredFoods;
+        } else {
+            console.warn(`⚠️  Season filter would leave only ${seasonFilteredFoods.length} foods — skipping hard filter, using bias only`);
+        }
     }
 
     if (populatedConditions && populatedConditions.length > 0) {
@@ -394,18 +439,22 @@ const generateDietPlan = (patient, allFoods, severity = 'Moderate', season = nul
         });
     }
 
-    // ── Track daily Virya balance and deduplicate foods via usedRoots ──────────
+    // ── Track daily Virya balance and deduplicate foods ────────────────────────
     const dailyViryaTracker = { warming: 0, cooling: 0 };
-    const usedRoots = new Set();
-    const extractRoot = (name) => name.split(',')[0].toLowerCase().trim();
+    const usedNames = new Set(); // use full lowercase name to avoid over-deduplication
+    // For Indian foods like 'Plain Rice', 'Jeera Rice', etc., first-word deduplication
+    // would incorrectly treat them all as the same 'plain' root.
+    const extractRoot = (name) => name.toLowerCase().trim();
 
-    // ── Snack pool exclusion list ──────────────────────────────────────────────
-    const SNACK_EXCLUDED_CATEGORIES = ['Fats and Oils', 'Dairy and Egg Products', 'Spices and Herbs', 'Cereal Grains and Pasta', 'Legumes and Legume Products'];
-
+    // ── Snack pool: all foods explicitly marked as Snack ──────────────────────
+    // Previously excluded categories like 'Cereal Grains' and 'Legumes' prevented
+    // Indian snack foods (rolls, momos, cutlets, corn) from appearing as snacks.
+    // Since Indian foods have their meal_type set correctly from the CSV, we rely
+    // solely on meal_type === 'Snack' here.
     const snackPool = filteredFoods.filter(f => {
-        if (SNACK_EXCLUDED_CATEGORIES.includes(f.category)) return false;
         if (f.meal_type === 'Snack') return true;
-        if (f.meal_type === 'All' && ['Fruits and Fruit Juices', 'Nut and Seed Products', 'Vegetables and Vegetable Products'].includes(f.category)) return true;
+        // Also include fruit / nut foods tagged 'All' from USDA data
+        if (f.meal_type === 'All' && ['Fruits and Fruit Juices', 'Nut and Seed Products'].includes(f.category)) return true;
         return false;
     });
 
@@ -413,33 +462,33 @@ const generateDietPlan = (patient, allFoods, severity = 'Moderate', season = nul
 
     // Breakfast (min 2, max 3)
     console.log('\n🥣 Selecting breakfast...');
-    let bPool = filteredFoods.filter(f => !usedRoots.has(extractRoot(f.name)));
+    let bPool = filteredFoods.filter(f => !usedNames.has(extractRoot(f.name)));
     breakfast = selectMealFoods(bPool, mealCalorieTarget, 'Breakfast', patient.prakriti, patient.digestionStrength, dailyViryaTracker, severity, season, 2, 3);
-    breakfast.forEach(f => usedRoots.add(extractRoot(f.name)));
+    breakfast.forEach(f => usedNames.add(extractRoot(f.name)));
 
     // Mid Morning Snack (min 1, max 2)
     console.log('\n🍎 Selecting mid-morning snack...');
-    let mmsPool = snackPool.filter(f => !usedRoots.has(extractRoot(f.name)));
+    let mmsPool = snackPool.filter(f => !usedNames.has(extractRoot(f.name)));
     midMorningSnack = selectMealFoods(mmsPool, snackCalorieTarget, 'Snack', patient.prakriti, patient.digestionStrength, dailyViryaTracker, severity, season, 1, 2);
-    midMorningSnack.forEach(f => usedRoots.add(extractRoot(f.name)));
+    midMorningSnack.forEach(f => usedNames.add(extractRoot(f.name)));
 
     // Lunch (min 2, max 3)
     console.log('\n🍛 Selecting lunch...');
-    let lPool = filteredFoods.filter(f => !usedRoots.has(extractRoot(f.name)));
+    let lPool = filteredFoods.filter(f => !usedNames.has(extractRoot(f.name)));
     lunch = selectMealFoods(lPool, mealCalorieTarget, 'Lunch', patient.prakriti, patient.digestionStrength, dailyViryaTracker, severity, season, 2, 3);
-    lunch.forEach(f => usedRoots.add(extractRoot(f.name)));
+    lunch.forEach(f => usedNames.add(extractRoot(f.name)));
 
     // Evening Snack (min 1, max 2)
     console.log('\n🍎 Selecting evening snack...');
-    let esPool = snackPool.filter(f => !usedRoots.has(extractRoot(f.name)));
+    let esPool = snackPool.filter(f => !usedNames.has(extractRoot(f.name)));
     eveningSnack = selectMealFoods(esPool, snackCalorieTarget, 'Snack', patient.prakriti, patient.digestionStrength, dailyViryaTracker, severity, season, 1, 2);
-    eveningSnack.forEach(f => usedRoots.add(extractRoot(f.name)));
+    eveningSnack.forEach(f => usedNames.add(extractRoot(f.name)));
 
     // Dinner (min 2, max 3)
     console.log('\n🍲 Selecting dinner...');
-    let dPool = filteredFoods.filter(f => !usedRoots.has(extractRoot(f.name)));
+    let dPool = filteredFoods.filter(f => !usedNames.has(extractRoot(f.name)));
     dinner = selectMealFoods(dPool, mealCalorieTarget, 'Dinner', patient.prakriti, patient.digestionStrength, dailyViryaTracker, severity, season, 2, 3);
-    dinner.forEach(f => usedRoots.add(extractRoot(f.name)));
+    dinner.forEach(f => usedNames.add(extractRoot(f.name)));
 
     const allMealFoods = [...breakfast, ...midMorningSnack, ...lunch, ...eveningSnack, ...dinner];
     console.log(`\n✓ Total foods selected: ${allMealFoods.length} (incl. ${midMorningSnack.length + eveningSnack.length} snack items)`);

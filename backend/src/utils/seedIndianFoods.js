@@ -1,118 +1,383 @@
+/**
+ * VedaCare — Indian Foods Seed Script (CSV-driven)
+ *
+ * Reads data/ayurvedic_foods.csv and upserts all Indian foods into MongoDB.
+ * Maps CSV column names/values → Food mongoose schema enums.
+ *
+ * FIXED:
+ *  - Stores `season` from CSV so seasonal filtering works in diet generation
+ *  - Improved dosha_suitable mapping for better per-patient differentiation
+ *  - Improved agni_level derivation
+ *  - Stores compatibility_group for veg/non-veg filtering
+ *
+ * Usage:
+ *   cd backend && npm run seed-indian
+ */
+
 const mongoose = require('mongoose');
-require('dotenv').config({ path: __dirname + '/../../.env' });
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config({ path: path.join(__dirname, '/../../.env') });
 const Food = require('../models/Food');
 
-const CURATED_FOODS = [
-  // ── BREAKFAST ──
-  { name: 'Poha (Flattened Rice)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 130, protein: 2.5, carbs: 27, fat: 0.5, fiber: 0.5, iron: 1.2, calcium: 10, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Upma (Semolina Porridge)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 155, protein: 4, carbs: 28, fat: 3, fiber: 1.5, iron: 1, calcium: 15, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura'], guna: ['Laghu'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Idli (Steamed Rice Cake)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 58, protein: 2, carbs: 12, fat: 0.3, fiber: 0.5, iron: 0.5, calcium: 8, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Dosa (Rice Lentil Crepe)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 133, protein: 3.5, carbs: 22, fat: 3.7, fiber: 1, iron: 0.8, calcium: 12, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Amla', 'Madhura'], guna: ['Laghu'], vipaka: 'Amla', agni_level: 'Medium' },
-  { name: 'Oatmeal (Cooked)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 71, protein: 2.5, carbs: 12, fat: 1.5, fiber: 1.7, iron: 0.7, calcium: 10, vitaminC: 0, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Wheat Roti (Chapati)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 297, protein: 8, carbs: 52, fat: 6, fiber: 3.9, iron: 2.7, calcium: 30, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Methi Paratha (Fenugreek Flatbread)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 230, protein: 6, carbs: 35, fat: 7, fiber: 3, iron: 2, calcium: 25, vitaminC: 2, dosha_suitable: 'Kapha', virya: 'Warming', rasa: ['Tikta', 'Katu'], guna: ['Laghu', 'Ruksha'], vipaka: 'Katu', agni_level: 'Medium' },
-  { name: 'Besan Chilla (Chickpea Pancake)', category: 'Legumes and Legume Products', meal_type: 'Breakfast', calories: 180, protein: 9, carbs: 24, fat: 5, fiber: 4, iron: 2.5, calcium: 45, vitaminC: 0, dosha_suitable: 'Kapha', virya: 'Warming', rasa: ['Madhura', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Sabudana Khichdi (Tapioca Porridge)', category: 'Cereal Grains and Pasta', meal_type: 'Breakfast', calories: 210, protein: 2, carbs: 45, fat: 4, fiber: 0.5, iron: 0.3, calcium: 20, vitaminC: 0, dosha_suitable: 'Vata', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Boiled Eggs', category: 'Dairy and Egg Products', meal_type: 'Breakfast', calories: 155, protein: 13, carbs: 1.1, fat: 11, fiber: 0, iron: 1.9, calcium: 50, vitaminC: 0, vitaminD: 87, vitaminB12: 1.1, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
+// ── Column value mappings ─────────────────────────────────────────────────────
 
-  // ── LUNCH ──
-  { name: 'White Rice (Cooked)', category: 'Cereal Grains and Pasta', meal_type: 'Lunch', calories: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, iron: 0.2, calcium: 10, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Brown Rice (Cooked)', category: 'Cereal Grains and Pasta', meal_type: 'Lunch', calories: 112, protein: 2.6, carbs: 24, fat: 0.9, fiber: 1.8, iron: 0.5, calcium: 10, vitaminC: 0, dosha_suitable: 'Kapha', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Moong Dal (Yellow Lentil Soup)', category: 'Legumes and Legume Products', meal_type: 'Lunch', calories: 104, protein: 7, carbs: 18, fat: 0.4, fiber: 4, iron: 1.4, calcium: 27, vitaminC: 1, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Toor Dal (Pigeon Pea Soup)', category: 'Legumes and Legume Products', meal_type: 'Lunch', calories: 116, protein: 7, carbs: 20, fat: 0.4, fiber: 5, iron: 1.5, calcium: 30, vitaminC: 1, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Chana Dal (Split Chickpea Soup)', category: 'Legumes and Legume Products', meal_type: 'Lunch', calories: 164, protein: 8, carbs: 27, fat: 2.7, fiber: 7, iron: 3.5, calcium: 49, vitaminC: 0, dosha_suitable: 'Kapha', virya: 'Cooling', rasa: ['Madhura', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Rajma Curry (Kidney Bean Curry)', category: 'Legumes and Legume Products', meal_type: 'Lunch', calories: 127, protein: 8.7, carbs: 22, fat: 0.5, fiber: 6.4, iron: 6.4, calcium: 83, vitaminC: 2, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura', 'Kashaya'], guna: ['Guru', 'Ruksha'], vipaka: 'Madhura', agni_level: 'High' },
-  { name: 'Palak Paneer (Spinach Cottage Cheese)', category: 'Dairy and Egg Products', meal_type: 'Lunch', calories: 180, protein: 10, carbs: 8, fat: 12, fiber: 2, iron: 3.5, calcium: 220, vitaminC: 15, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura', 'Tikta'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Aloo Gobi (Potato Cauliflower)', category: 'Vegetables and Vegetable Products', meal_type: 'Lunch', calories: 95, protein: 2.5, carbs: 18, fat: 2.5, fiber: 3, iron: 1, calcium: 30, vitaminC: 48, dosha_suitable: 'Kapha', virya: 'Warming', rasa: ['Madhura', 'Tikta'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Bhindi Masala (Okra Stir Fry)', category: 'Vegetables and Vegetable Products', meal_type: 'Lunch', calories: 78, protein: 2, carbs: 14, fat: 2, fiber: 3.2, iron: 0.8, calcium: 82, vitaminC: 23, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura', 'Tikta'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Lauki Sabzi (Bottle Gourd Stir Fry)', category: 'Vegetables and Vegetable Products', meal_type: 'Lunch', calories: 17, protein: 0.6, carbs: 3.7, fat: 0.1, fiber: 0.5, iron: 0.2, calcium: 26, vitaminC: 10, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Mixed Vegetable Curry', category: 'Vegetables and Vegetable Products', meal_type: 'Lunch', calories: 85, protein: 2.5, carbs: 12, fat: 3, fiber: 3.5, iron: 2, calcium: 40, vitaminC: 30, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura', 'Tikta'], guna: ['Laghu'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Kadhi (Yogurt Gram Flour Curry)', category: 'Dairy and Egg Products', meal_type: 'Lunch', calories: 82, protein: 3, carbs: 10, fat: 3, fiber: 1, iron: 0.5, calcium: 90, vitaminC: 0, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Amla', 'Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Amla', agni_level: 'Medium' },
-  { name: 'Chicken Curry', category: 'Poultry Products', meal_type: 'Lunch', calories: 165, protein: 18, carbs: 5, fat: 8, fiber: 1, iron: 1.3, calcium: 15, vitaminC: 2, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura', 'Katu'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'High' },
-  { name: 'Fish Curry (Rohu)', category: 'Finfish and Shellfish Products', meal_type: 'Lunch', calories: 130, protein: 17, carbs: 3, fat: 6, fiber: 0.5, iron: 1, calcium: 30, vitaminC: 0, vitaminD: 200, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'High' },
-  { name: 'Sambar (Lentil Vegetable Stew)', category: 'Legumes and Legume Products', meal_type: 'Lunch', calories: 70, protein: 4, carbs: 12, fat: 1.5, fiber: 3, iron: 2, calcium: 40, vitaminC: 20, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura', 'Amla', 'Katu'], guna: ['Laghu'], vipaka: 'Katu', agni_level: 'Medium' },
-  { name: 'Dal Makhani (Black Lentil Curry)', category: 'Legumes and Legume Products', meal_type: 'Lunch', calories: 150, protein: 8, carbs: 20, fat: 5, fiber: 5, iron: 3.2, calcium: 60, vitaminC: 1, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
+/**
+ * Maps CSV `rasa` string (e.g. "sweet", "sour", "sweet/pungent") → Mongoose enum array
+ * CSV values: sweet, sour, salty, pungent, bitter, astringent
+ * Schema enum: Madhura, Amla, Lavana, Katu, Tikta, Kashaya
+ */
+const rasaMap = {
+    sweet: 'Madhura',
+    sour: 'Amla',
+    salty: 'Lavana',
+    pungent: 'Katu',
+    bitter: 'Tikta',
+    astringent: 'Kashaya',
+};
 
-  // ── DINNER ──
-  { name: 'Khichdi (Rice Lentil Porridge)', category: 'Cereal Grains and Pasta', meal_type: 'Dinner', calories: 124, protein: 5.2, carbs: 22, fat: 2, fiber: 2.5, iron: 1.5, calcium: 25, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Moong Dal Soup (Light)', category: 'Legumes and Legume Products', meal_type: 'Dinner', calories: 85, protein: 6, carbs: 14, fat: 0.4, fiber: 3, iron: 1.2, calcium: 25, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Vegetable Soup', category: 'Vegetables and Vegetable Products', meal_type: 'Dinner', calories: 45, protein: 2, carbs: 8, fat: 1, fiber: 2, iron: 1, calcium: 30, vitaminC: 15, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura', 'Tikta'], guna: ['Laghu'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Barley Soup (Yavagu)', category: 'Cereal Grains and Pasta', meal_type: 'Dinner', calories: 95, protein: 3, carbs: 19, fat: 0.5, fiber: 4, iron: 1, calcium: 15, vitaminC: 0, dosha_suitable: 'Kapha', virya: 'Cooling', rasa: ['Madhura', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Katu', agni_level: 'Low' },
-  { name: 'Roti with Ghee', category: 'Cereal Grains and Pasta', meal_type: 'Dinner', calories: 320, protein: 8, carbs: 52, fat: 9, fiber: 3.5, iron: 2.5, calcium: 35, vitaminC: 0, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Palak Soup (Spinach Soup)', category: 'Vegetables and Vegetable Products', meal_type: 'Dinner', calories: 40, protein: 2.5, carbs: 5, fat: 1, fiber: 2, iron: 3, calcium: 100, vitaminC: 28, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Tikta', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Katu', agni_level: 'Low' },
-  { name: 'Grilled Chicken (Tandoori)', category: 'Poultry Products', meal_type: 'Dinner', calories: 150, protein: 25, carbs: 2, fat: 4.5, fiber: 0, iron: 1.5, calcium: 20, vitaminC: 0, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura', 'Katu'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'High' },
-  { name: 'Pumpkin Curry (Kaddu)', category: 'Vegetables and Vegetable Products', meal_type: 'Dinner', calories: 50, protein: 1.5, carbs: 10, fat: 1.5, fiber: 1.5, iron: 0.5, calcium: 20, vitaminC: 9, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Steamed Vegetables with Rice', category: 'Vegetables and Vegetable Products', meal_type: 'Dinner', calories: 110, protein: 2.5, carbs: 22, fat: 0.5, fiber: 3, iron: 1, calcium: 30, vitaminC: 20, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura', 'Tikta'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Paneer Tikka (Grilled Cottage Cheese)', category: 'Dairy and Egg Products', meal_type: 'Dinner', calories: 265, protein: 15, carbs: 6, fat: 20, fiber: 1, iron: 0.5, calcium: 190, vitaminC: 2, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
+function mapRasa(csvRasa) {
+    if (!csvRasa) return [];
+    return csvRasa
+        .split('/')
+        .map(r => rasaMap[r.trim().toLowerCase()])
+        .filter(Boolean);
+}
 
-  // ── SNACKS ──
-  { name: 'Apple (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2.4, iron: 0.1, calcium: 6, vitaminC: 5, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura', 'Amla'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Banana (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 89, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6, iron: 0.3, calcium: 5, vitaminC: 9, potassium: 358, dosha_suitable: 'Vata', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Pomegranate (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 83, protein: 1.7, carbs: 19, fat: 1.2, fiber: 4, iron: 0.3, calcium: 10, vitaminC: 10, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura', 'Amla', 'Kashaya'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Papaya (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 43, protein: 0.5, carbs: 11, fat: 0.3, fiber: 1.7, iron: 0.3, calcium: 20, vitaminC: 62, dosha_suitable: 'Kapha', virya: 'Warming', rasa: ['Madhura'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Guava (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 68, protein: 2.6, carbs: 14, fat: 1, fiber: 5.4, iron: 0.3, calcium: 18, vitaminC: 228, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Madhura', 'Amla'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Mango (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 60, protein: 0.8, carbs: 15, fat: 0.4, fiber: 1.6, iron: 0.2, calcium: 11, vitaminC: 36, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura', 'Amla'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Amla (Indian Gooseberry)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 44, protein: 0.9, carbs: 10, fat: 0.6, fiber: 4.3, iron: 0.3, calcium: 25, vitaminC: 600, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Amla', 'Madhura', 'Tikta', 'Kashaya', 'Katu'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Soaked Almonds', category: 'Nut and Seed Products', meal_type: 'Snack', calories: 579, protein: 21, carbs: 22, fat: 50, fiber: 12.5, iron: 3.7, calcium: 264, vitaminC: 0, magnesium: 270, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Walnuts (Soaked)', category: 'Nut and Seed Products', meal_type: 'Snack', calories: 654, protein: 15, carbs: 14, fat: 65, fiber: 6.7, iron: 2.9, calcium: 98, vitaminC: 1, omega3: 9080, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Kashaya', 'Tikta'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Cashews (Unsalted)', category: 'Nut and Seed Products', meal_type: 'Snack', calories: 553, protein: 18, carbs: 30, fat: 44, fiber: 3.3, iron: 6.7, calcium: 37, vitaminC: 0, magnesium: 292, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Medium' },
-  { name: 'Cucumber (Fresh)', category: 'Vegetables and Vegetable Products', meal_type: 'Snack', calories: 15, protein: 0.7, carbs: 3.6, fat: 0.1, fiber: 0.5, iron: 0.3, calcium: 16, vitaminC: 3, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Buttermilk (Takra)', category: 'Dairy and Egg Products', meal_type: 'Snack', calories: 40, protein: 3.3, carbs: 4.8, fat: 0.9, fiber: 0, iron: 0.1, calcium: 116, vitaminC: 0, vitaminB12: 0.2, dosha_suitable: 'Tridosha', virya: 'Cooling', rasa: ['Amla', 'Madhura'], guna: ['Laghu', 'Ruksha'], vipaka: 'Amla', agni_level: 'Low' },
-  { name: 'Dates (Fresh)', category: 'Fruits and Fruit Juices', meal_type: 'Snack', calories: 277, protein: 1.8, carbs: 75, fat: 0.2, fiber: 6.7, iron: 1, calcium: 64, vitaminC: 0, potassium: 696, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
+/**
+ * Maps CSV `guna` string → Mongoose enum array
+ */
+const gunaMap = {
+    light: 'Laghu',
+    heavy: 'Guru',
+    oily: 'Snigdha',
+    dry: 'Ruksha',
+    hot: 'Ushna',
+    cold: 'Sheeta',
+    sharp: 'Tikshna',
+    dull: 'Manda',
+    stable: 'Sthira',
+    mobile: 'Sara',
+    soft: 'Mridu',
+    hard: 'Kathina',
+    clear: 'Vishada',
+    slimy: 'Picchila',
+    smooth: 'Slakshna',
+    rough: 'Khara',
+    subtle: 'Sukshma',
+    gross: 'Sthula',
+    dense: 'Sandra',
+    liquid: 'Drava',
+};
 
-  // ── ALL MEALS (sides and staples) ──
-  { name: 'Cow Milk (Full Fat)', category: 'Dairy and Egg Products', meal_type: 'All', calories: 61, protein: 3.2, carbs: 4.8, fat: 3.3, fiber: 0, iron: 0.1, calcium: 113, vitaminC: 0, vitaminD: 40, vitaminB12: 0.4, dosha_suitable: 'Vata', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Curd (Yogurt, Fresh)', category: 'Dairy and Egg Products', meal_type: 'All', calories: 61, protein: 3.5, carbs: 4.7, fat: 3.3, fiber: 0, iron: 0.1, calcium: 121, vitaminC: 0, vitaminB12: 0.4, dosha_suitable: 'Vata', virya: 'Warming', rasa: ['Amla', 'Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Amla', agni_level: 'Medium' },
-  { name: 'Spinach (Palak, Cooked)', category: 'Vegetables and Vegetable Products', meal_type: 'All', calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, fiber: 2.2, iron: 3.6, calcium: 136, vitaminC: 28, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Tikta', 'Kashaya'], guna: ['Laghu', 'Ruksha'], vipaka: 'Katu', agni_level: 'Low' },
-  { name: 'Pumpkin (Cooked)', category: 'Vegetables and Vegetable Products', meal_type: 'All', calories: 20, protein: 0.7, carbs: 5, fat: 0.1, fiber: 0.5, iron: 0.4, calcium: 15, vitaminC: 9, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Carrot (Cooked)', category: 'Vegetables and Vegetable Products', meal_type: 'All', calories: 35, protein: 0.8, carbs: 8, fat: 0.2, fiber: 3, iron: 0.4, calcium: 33, vitaminC: 6, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura', 'Tikta'], guna: ['Laghu', 'Ruksha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Turmeric Milk (Haldi Doodh)', category: 'Dairy and Egg Products', meal_type: 'All', calories: 70, protein: 3.5, carbs: 6, fat: 3.5, fiber: 0.2, iron: 0.5, calcium: 120, vitaminC: 0, dosha_suitable: 'Tridosha', virya: 'Warming', rasa: ['Madhura', 'Tikta', 'Katu'], guna: ['Laghu', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Coconut Chutney', category: 'Vegetables and Vegetable Products', meal_type: 'All', calories: 180, protein: 2, carbs: 8, fat: 16, fiber: 4, iron: 1, calcium: 14, vitaminC: 3, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-  { name: 'Beetroot (Cooked)', category: 'Vegetables and Vegetable Products', meal_type: 'All', calories: 44, protein: 1.7, carbs: 10, fat: 0.2, fiber: 2, iron: 0.8, calcium: 16, vitaminC: 4, folate: 80, dosha_suitable: 'Pitta', virya: 'Cooling', rasa: ['Madhura'], guna: ['Guru', 'Snigdha'], vipaka: 'Madhura', agni_level: 'Low' },
-];
+function mapGuna(csvGuna) {
+    if (!csvGuna) return [];
+    return csvGuna
+        .split('/')
+        .map(g => gunaMap[g.trim().toLowerCase()])
+        .filter(Boolean);
+}
+
+/**
+ * Maps CSV `virya` → Mongoose enum ('Warming'|'Cooling')
+ */
+function mapVirya(csvVirya) {
+    if (!csvVirya) return 'Warming';
+    const v = csvVirya.trim().toLowerCase();
+    if (v === 'cooling') return 'Cooling';
+    return 'Warming'; // heating → Warming
+}
+
+/**
+ * Maps CSV `vipaka` → Mongoose enum ('Madhura'|'Amla'|'Katu')
+ */
+const vipakaMap = {
+    sweet: 'Madhura',
+    sour: 'Amla',
+    pungent: 'Katu',
+};
+
+function mapVipaka(csvVipaka) {
+    return vipakaMap[csvVipaka?.trim().toLowerCase()] || 'Madhura';
+}
+
+/**
+ * Derives `dosha_suitable` from CSV vata/pitta/kapha columns.
+ *
+ * IMPROVED LOGIC:
+ * - A food is "suitable" for a dosha if it DECREASEs that dosha (pacifies it).
+ * - If a food decreases all 3 doshas → Tridosha
+ * - If it decreases exactly 2 → Dual
+ * - If it decreases exactly 1 → that specific dosha ('Vata', 'Pitta', or 'Kapha')
+ * - If it decreases none (all increase/neutral):
+ *     → Instead of defaulting to Tridosha, we pick the dosha that is NEUTRAL
+ *       (not increased), preferring Vata > Pitta > Kapha.
+ *       This ensures every food maps to a meaningful dosha profile.
+ *
+ * This fix prevents the "all foods look the same" problem where every food
+ * that doesn't decrease any dosha was previously labelled 'Tridosha', making
+ * the dosha filter useless for differentiating patients.
+ */
+function mapDoshaSuitable(vata, pitta, kapha) {
+    const v = vata?.toLowerCase();
+    const p = pitta?.toLowerCase();
+    const k = kapha?.toLowerCase();
+
+    const pacifies = [];
+    if (v === 'decrease') pacifies.push('Vata');
+    if (p === 'decrease') pacifies.push('Pitta');
+    if (k === 'decrease') pacifies.push('Kapha');
+
+    if (pacifies.length === 3) return 'Tridosha';
+    if (pacifies.length === 2) return 'Dual';
+    if (pacifies.length === 1) return pacifies[0];
+
+    // None decreased — find neutrals (not 'increase')
+    const neutrals = [];
+    if (v === 'neutral') neutrals.push('Vata');
+    if (p === 'neutral') neutrals.push('Pitta');
+    if (k === 'neutral') neutrals.push('Kapha');
+
+    if (neutrals.length === 3) return 'Tridosha'; // all neutral → Tridosha
+    if (neutrals.length === 2) return 'Dual';       // two neutral → Dual
+    if (neutrals.length === 1) return neutrals[0];  // one neutral → that dosha
+
+    // All increase: this food aggravates all doshas → still Tridosha but flagged
+    return 'Tridosha';
+}
+
+/**
+ * Maps CSV `meal_type` → Mongoose enum ('Breakfast'|'Lunch'|'Dinner'|'Snack'|'All')
+ */
+function mapMealType(csvMealType) {
+    const mt = csvMealType?.trim().toLowerCase();
+    const map = {
+        breakfast: 'Breakfast',
+        lunch: 'Lunch',
+        dinner: 'Dinner',
+        snack: 'Snack',
+        night: 'Dinner',
+        all: 'All',
+    };
+    return map[mt] || 'All';
+}
+
+/**
+ * Maps CSV category to canonical category string used by Food model.
+ * The CSV uses: grain, legume, dairy, fruit, veg, protein, meat, nuts, beverage, fat
+ */
+const categoryMap = {
+    grain: 'Cereal Grains and Pasta',
+    legume: 'Legumes and Legume Products',
+    dairy: 'Dairy and Egg Products',
+    fruit: 'Fruits and Fruit Juices',
+    veg: 'Vegetables and Vegetable Products',
+    vegetable: 'Vegetables and Vegetable Products',
+    protein: 'Dairy and Egg Products',
+    meat: 'Poultry Products',
+    nuts: 'Nut and Seed Products',
+    beverage: 'Beverages',
+    fat: 'Fats and Oils',
+};
+
+function mapCategory(csvCategory) {
+    return categoryMap[csvCategory?.trim().toLowerCase()] || csvCategory;
+}
+
+/**
+ * Maps CSV `season` value → array of season strings stored in Food.season
+ * CSV values: summer, winter, all
+ * Stored as array to allow multi-season foods
+ */
+function mapSeason(csvSeason) {
+    if (!csvSeason) return ['all'];
+    const s = csvSeason.trim().toLowerCase();
+    if (s === 'all') return ['all', 'summer', 'winter'];
+    if (s === 'summer') return ['summer'];
+    if (s === 'winter') return ['winter'];
+    return ['all'];
+}
+
+/**
+ * Derives agni_level from CSV data.
+ *
+ * IMPROVED: Uses guna (light/heavy) as primary signal, then calorie range,
+ * then category to give more meaningful agni levels.
+ *
+ * Low agni (Manda Agni): light foods, low calorie, easy to digest
+ * Medium agni: moderate foods
+ * High agni (Tikshna Agni): heavy, calorie-dense, hard to digest foods
+ */
+function deriveAgniLevel(calories, csvGuna, csvCategory) {
+    const cal = parseFloat(calories) || 0;
+    const cat = csvCategory?.trim().toLowerCase();
+    const isHeavy = csvGuna?.toLowerCase().includes('heavy');
+    const isLight = csvGuna?.toLowerCase().includes('light');
+
+    // Heavy proteins, nuts, rich dairy → High agni needed
+    if (['meat', 'nuts'].includes(cat) || (isHeavy && cal > 250)) return 'High';
+
+    // Light foods under 120 cal → suitable for Low agni
+    if (isLight && cal < 120) return 'Low';
+
+    // Very light beverages
+    if (cat === 'beverage' && cal < 30) return 'Low';
+
+    // Medium-light foods (light but moderate calories)
+    if (isLight && cal <= 200) return 'Medium';
+
+    // Heavy moderate foods
+    if (isHeavy && cal >= 180) return 'High';
+
+    // Default
+    return 'Medium';
+}
+
+// ── CSV parser ────────────────────────────────────────────────────────────────
+
+function parseCSV(filePath) {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const lines = content.split('\n').map(l => l.replace(/\r$/, ''));
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    const records = [];
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const values = line.split(',');
+        if (values.length < headers.length) continue; // skip malformed rows
+
+        const record = {};
+        headers.forEach((h, idx) => {
+            record[h] = (values[idx] || '').trim();
+        });
+        records.push(record);
+    }
+    return records;
+}
+
+// ── Non-vegetarian categories (for veg/non-veg filtering in generation) ──────
+const NON_VEG_COMPATIBILITY_GROUPS = new Set(['meat']);
+
+// ── Main seeder ───────────────────────────────────────────────────────────────
 
 async function seedIndianFoods() {
     try {
         await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
         console.log('✅ Connected to MongoDB');
 
-        // Disable isClinicApproved on all existing foods
+        const csvPath = path.join(__dirname, '../../../data/ayurvedic_foods.csv');
+        if (!fs.existsSync(csvPath)) {
+            console.error(`❌ CSV not found at: ${csvPath}`);
+            process.exit(1);
+        }
+
+        const rows = parseCSV(csvPath);
+        console.log(`📄 Parsed ${rows.length} rows from CSV`);
+
+        // Disable isClinicApproved on all previously non-curated foods
         await Food.updateMany(
             { source: { $ne: 'Curated' } },
             { $set: { isClinicApproved: false } }
         );
         console.log('✅ Disabled isClinicApproved on all non-curated foods');
 
-        // Upsert new curated foods
-        const upserts = CURATED_FOODS.map(food => {
-            const newFood = {
-                ...food,
-                isClinicApproved: true,
+        let upserted = 0;
+        let skipped = 0;
+
+        for (const row of rows) {
+            const {
+                food_name,
+                category,
+                calories,
+                protein,
+                fat,
+                carbs,
+                rasa,
+                guna,
+                virya,
+                vipaka,
+                vata,
+                pitta,
+                kapha,
+                season,
+                meal_type,
+                compatibility_group,
+            } = row;
+
+            if (!food_name) { skipped++; continue; }
+
+            const mappedRasa = mapRasa(rasa);
+            const mappedGuna = mapGuna(guna);
+            const mappedVirya = mapVirya(virya);
+            const mappedVipaka = mapVipaka(vipaka);
+            const mappedDoshaSuitable = mapDoshaSuitable(vata, pitta, kapha);
+            const mappedMealType = mapMealType(meal_type);
+            const mappedCategory = mapCategory(category);
+            const mappedAgniLevel = deriveAgniLevel(calories, guna, category);
+            const mappedSeason = mapSeason(season);
+
+            const foodDoc = {
+                name: food_name,
+                category: mappedCategory,
+                meal_type: mappedMealType,
+                calories: parseFloat(calories) || 0,
+                energy: parseFloat(calories) || 0,
+                protein: parseFloat(protein) || 0,
+                carbs: parseFloat(carbs) || 0,
+                carbohydrates: parseFloat(carbs) || 0,
+                fat: parseFloat(fat) || 0,
+                fiber: 0,
+                dosha_suitable: mappedDoshaSuitable,
+                virya: mappedVirya,
+                vipaka: mappedVipaka,
+                agni_level: mappedAgniLevel,
+                season: mappedSeason,
                 source: 'Curated',
-                portionSize: 100,
-                glycemic_index: 0
+                isClinicApproved: true,
+                glycemic_index: 0,
+                ...(mappedRasa.length > 0 && { rasa: mappedRasa }),
+                ...(mappedGuna.length > 0 && { guna: mappedGuna }),
             };
-            return Food.findOneAndUpdate(
-                { name: food.name },
-                { $set: newFood },
-                { upsert: true, new: true }
-            );
-        });
 
-        await Promise.all(upserts);
-        console.log(`✅ Upserted ${upserts.length} curated Indian foods`);
+            try {
+                await Food.findOneAndUpdate(
+                    { name: food_name },
+                    { $set: foodDoc },
+                    { upsert: true, new: true, runValidators: true }
+                );
+                upserted++;
+            } catch (err) {
+                console.warn(`⚠️  Skipped "${food_name}": ${err.message}`);
+                skipped++;
+            }
+        }
 
-        // Get summaries
+        console.log(`\n✅ Upserted: ${upserted} foods`);
+        console.log(`⚠️  Skipped:  ${skipped} rows`);
+
+        // Summary
         const totalCount = await Food.countDocuments();
-        const usdaCount = await Food.countDocuments({ source: 'USDA SR Legacy 2018' });
         const curatedCount = await Food.countDocuments({ source: 'Curated' });
         const approvedCount = await Food.countDocuments({ isClinicApproved: true });
 
+        // Dosha distribution breakdown
+        const vataCnt = await Food.countDocuments({ source: 'Curated', dosha_suitable: 'Vata' });
+        const pittaCnt = await Food.countDocuments({ source: 'Curated', dosha_suitable: 'Pitta' });
+        const kaphaCnt = await Food.countDocuments({ source: 'Curated', dosha_suitable: 'Kapha' });
+        const dualCnt = await Food.countDocuments({ source: 'Curated', dosha_suitable: 'Dual' });
+        const tridoshaCnt = await Food.countDocuments({ source: 'Curated', dosha_suitable: 'Tridosha' });
+
         console.log('\n=== DB Summary ===');
-        console.log(`Total foods in DB (all): ${totalCount}`);
-        console.log(`USDA foods (source = USDA SR Legacy 2018): ${usdaCount}`);
-        console.log(`Curated Indian foods (source = Curated): ${curatedCount}`);
-        console.log(`isClinicApproved = true: ${approvedCount}`);
+        console.log(`Total foods in DB:          ${totalCount}`);
+        console.log(`Curated Indian foods:       ${curatedCount}`);
+        console.log(`isClinicApproved = true:    ${approvedCount}`);
+        console.log('\n--- Dosha Distribution (Curated) ---');
+        console.log(`  Vata:     ${vataCnt}`);
+        console.log(`  Pitta:    ${pittaCnt}`);
+        console.log(`  Kapha:    ${kaphaCnt}`);
+        console.log(`  Dual:     ${dualCnt}`);
+        console.log(`  Tridosha: ${tridoshaCnt}`);
         console.log('==================\n');
 
         process.exit(0);

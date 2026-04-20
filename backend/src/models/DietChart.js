@@ -87,7 +87,7 @@ const dietChartSchema = new mongoose.Schema({
     manualOverrides: [{
         meal: {
             type: String,
-            enum: ['breakfast', 'lunch', 'dinner'],
+            enum: ['breakfast', 'midMorningSnack', 'lunch', 'eveningSnack', 'dinner'],
             required: true
         },
         action: {

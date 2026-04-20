@@ -3,6 +3,7 @@ const Patient = require('../models/Patient');
 const Visit = require('../models/Visit');
 const Food = require('../models/Food');
 const { generateDietPlan } = require('../utils/ayurvedaRules');
+const { selectMealsWithGrok } = require('../utils/groqMealSelector');
 const { logAudit } = require('../middleware/audit.middleware');
 
 // @desc    Generate diet plan (Phase 3 - Doctor Workflow)
@@ -80,34 +81,67 @@ const generateDiet = async (req, res) => {
             throw error; // Re-throw unexpected errors
         }
 
+        // ── AI ENHANCEMENT LAYER (Optional) ───────────────
+        let finalBreakfast = dietPlan.breakfast;
+        let finalSnackAM = dietPlan.midMorningSnack || [];
+        let finalLunch = dietPlan.lunch;
+        let finalSnackPM = dietPlan.eveningSnack || [];
+        let finalDinner = dietPlan.dinner;
+        let aiReasoning = null;
+
+        if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'PASTE_YOUR_GROQ_KEY_HERE') {
+            const candidates = {
+                breakfast: allFoods.filter(f => f.meal_type === 'Breakfast' || f.meal_type === 'All'),
+                midMorningSnack: allFoods.filter(f => f.meal_type === 'Snack' || (f.meal_type === 'All' && ['Fruits and Fruit Juices', 'Nut and Seed Products', 'Vegetables and Vegetable Products'].includes(f.category))),
+                lunch: allFoods.filter(f => f.meal_type === 'Lunch' || f.meal_type === 'All'),
+                eveningSnack: allFoods.filter(f => f.meal_type === 'Snack' || (f.meal_type === 'All' && ['Fruits and Fruit Juices', 'Nut and Seed Products', 'Vegetables and Vegetable Products'].includes(f.category))),
+                dinner: allFoods.filter(f => f.meal_type === 'Dinner' || f.meal_type === 'All')
+            };
+
+            const groqResult = await selectMealsWithGrok(clinicalPatient, candidates, season);
+
+            if (groqResult) {
+                const idToFood = {};
+                allFoods.forEach(f => idToFood[f._id.toString()] = f);
+
+                finalBreakfast = groqResult.breakfast.map(id => idToFood[id]).filter(Boolean);
+                finalSnackAM = groqResult.midMorningSnack.map(id => idToFood[id]).filter(Boolean);
+                finalLunch = groqResult.lunch.map(id => idToFood[id]).filter(Boolean);
+                finalSnackPM = groqResult.eveningSnack.map(id => idToFood[id]).filter(Boolean);
+                finalDinner = groqResult.dinner.map(id => idToFood[id]).filter(Boolean);
+                aiReasoning = groqResult.reasoning;
+            }
+        }
+        // ────────────────────────────────────────────────
+
         // Return successful diet plan
         return res.status(200).json({
             success: true,
             dietPlan: {
-                breakfast: dietPlan.breakfast.map(food => ({
+                breakfast: finalBreakfast.map(food => ({
                     foodItem: food,
                     quantity: '1 serving'
                 })),
-                midMorningSnack: (dietPlan.midMorningSnack || []).map(food => ({
+                midMorningSnack: finalSnackAM.map(food => ({
                     foodItem: food,
                     quantity: '1 serving'
                 })),
-                lunch: dietPlan.lunch.map(food => ({
+                lunch: finalLunch.map(food => ({
                     foodItem: food,
                     quantity: '1 serving'
                 })),
-                eveningSnack: (dietPlan.eveningSnack || []).map(food => ({
+                eveningSnack: finalSnackPM.map(food => ({
                     foodItem: food,
                     quantity: '1 serving'
                 })),
-                dinner: dietPlan.dinner.map(food => ({
+                dinner: finalDinner.map(food => ({
                     foodItem: food,
                     quantity: '1 serving'
                 }))
             },
             totalNutrients: dietPlan.totalNutrients,
             ayurvedaAttributes: dietPlan.ayurvedaAttributes,
-            complianceNotes: dietPlan.complianceNotes,
+            complianceNotes: aiReasoning ? [...dietPlan.complianceNotes, `AI Reasoning: ${aiReasoning}`] : dietPlan.complianceNotes,
             severityWarnings: dietPlan.severityWarnings || [],
             rdaComparison: dietPlan.rdaComparison || null
         });

@@ -57,6 +57,8 @@ const foodSchema = new mongoose.Schema({
         default: 0
     },
     glycemic_index: { type: Number, default: 0 },
+    // Season suitability: 'summer' | 'winter' | 'all' (from ayurvedic_foods.csv)
+    season: { type: [String], default: ['all'] },
     source: {
         type: String,
         required: [true, 'Please provide data source'],
