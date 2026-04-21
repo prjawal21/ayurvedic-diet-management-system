@@ -2,7 +2,7 @@ const DietChart = require('../models/DietChart');
 const Patient = require('../models/Patient');
 const Visit = require('../models/Visit');
 const Food = require('../models/Food');
-const { generateDietPlan } = require('../utils/ayurvedaRules');
+const { generateDietPlan, calculateTotalNutrition } = require('../utils/ayurvedaRules');
 const { selectMealsWithGrok } = require('../utils/groqMealSelector');
 const { logAudit } = require('../middleware/audit.middleware');
 
@@ -88,6 +88,7 @@ const generateDiet = async (req, res) => {
         let finalSnackPM = dietPlan.eveningSnack || [];
         let finalDinner = dietPlan.dinner;
         let aiReasoning = null;
+        let finalNutrition = dietPlan.totalNutrients;
 
         if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'PASTE_YOUR_GROQ_KEY_HERE') {
             const candidates = {
@@ -110,6 +111,16 @@ const generateDiet = async (req, res) => {
                 finalSnackPM = groqResult.eveningSnack.map(id => idToFood[id]).filter(Boolean);
                 finalDinner = groqResult.dinner.map(id => idToFood[id]).filter(Boolean);
                 aiReasoning = groqResult.reasoning;
+                
+                // Recalculate nutrition specifically for the newly AI-selected foods
+                const allAISelectedFoods = [
+                    ...finalBreakfast,
+                    ...finalSnackAM,
+                    ...finalLunch,
+                    ...finalSnackPM,
+                    ...finalDinner
+                ];
+                finalNutrition = calculateTotalNutrition(allAISelectedFoods);
             }
         }
         // ────────────────────────────────────────────────
@@ -139,7 +150,7 @@ const generateDiet = async (req, res) => {
                     quantity: '1 serving'
                 }))
             },
-            totalNutrients: dietPlan.totalNutrients,
+            totalNutrients: finalNutrition,
             ayurvedaAttributes: dietPlan.ayurvedaAttributes,
             complianceNotes: aiReasoning ? [...dietPlan.complianceNotes, `AI Reasoning: ${aiReasoning}`] : dietPlan.complianceNotes,
             severityWarnings: dietPlan.severityWarnings || [],

@@ -33,9 +33,9 @@ const recomputeNutrition = (slots, foodMap) => {
             const f = foodMap[item.foodItem?._id || item.foodItem];
             if (!f) return;
             const mult = (item.portionSize || 100) / 100;
-            totals.calories += (f.energy || 0) * mult;
+            totals.calories += (f.calories || f.energy || 0) * mult;
             totals.protein += (f.protein || 0) * mult;
-            totals.carbs += (f.carbs || 0) * mult;
+            totals.carbs += (f.carbs || f.carbohydrates || 0) * mult;
             totals.fat += (f.fat || 0) * mult;
             totals.fiber += (f.fiber || 0) * mult;
             MICRO_KEYS.forEach(k => { totals[k] += (f[k] || 0) * mult; });
