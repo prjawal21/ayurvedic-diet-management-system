@@ -4,10 +4,6 @@
 
 Built for Smart India Hackathon 2025 (Problem Statement ID: 25024) under the Ministry of Ayush / All India Institute of Ayurveda (AIIA). Category: MedTech / HealthTech / Software.
 
-### 🔗 Live Site: [ayurvedic-diet-management-system.vercel.app](https://ayurvedic-diet-management-system.vercel.app)
-
-- **For demo access, contact me at prajwalp2125@gmail.com**
-
 ---
 
 ## 🌟 Features
@@ -191,15 +187,6 @@ Frontend runs at: `http://localhost:5173`
 3. Commit changes (`git commit -m 'Add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
----
-
-## 🙏 Acknowledgments
-
-- **Ministry of Ayush** & **All India Institute of Ayurveda (AIIA)**
-- **Groq** - LLM API provider
-- **USDA** - FoodData Central database
-- **React & Node.js** - Open-source communities
 
 ---
 
