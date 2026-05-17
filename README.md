@@ -1,193 +1,306 @@
-# VedaCare – Ayurvedic Diet Management System
+<div align="center">
 
-**A cloud-based clinic management and nutrient analysis platform for Ayurvedic dietitians.** 
+<br/>
 
-Built for Smart India Hackathon 2025 (Problem Statement ID: 25024) under the Ministry of Ayush / All India Institute of Ayurveda (AIIA). Category: MedTech / HealthTech / Software.
+<img src="https://img.shields.io/badge/VedaCare-Ayurvedic%20Intelligence-brightgreen?style=for-the-badge&logo=leaf&logoColor=white" alt="VedaCare" height="40"/>
 
----
+<h1>🌿 VedaCare</h1>
 
-## 🌟 Features
+<h3>Ayurvedic Diet Management & Clinical Intelligence Platform</h3>
 
-### Ayurvedic Intelligence
-- **Automated Diet Generation**: AI and rule-based generation of patient-specific diet charts tailored to individual health conditions
-- **Dosha-Based Compatibility**: Food compatibility scoring synchronized with the patient's Prakriti (Vata, Pitta, Kapha) and current imbalances
-- **Viruddha Ahara Detection**: Intelligent incompatibility detection to prevent unsafe food combinations based on classical Ayurvedic principles
-- **Dietary Filtering**: Precise diet adjustments based on Rasa (taste), Guna (qualities), Virya (thermal potency), and Vipaka (post-digestive effect)
-- **Ritucharya Adjustments**: Seasonal dietary recommendations dynamically adjusting to all six Ayurvedic seasons
+<p><em>Bridging five millennia of Ayurvedic wisdom with modern nutritional science.</em></p>
 
-### Clinical Workflow
-- **Patient Management**: Comprehensive comprehensive tools for doctors and dietitians to register, track, and manage patient profiles
-- **Diet Chart Export**: Print and PDF export functionality for patient handouts
-- **Multi-role Access**: Admin, Doctor, and Dietitian dashboards with clinic-scoped data isolation
-- **Manual Adjustments**: Manual diet editing capabilities with real-time nutrition recalculation
+<br/>
 
-### Nutritional Science
-- **Extensive Database**: 57 curated Indian dishes with full Ayurvedic annotations plus the full USDA SR Legacy 2018 dataset (~7,793 items)
-- **Nutrient Analysis**: Real-time tracking of macro and micronutrients comparing against ICMR 2020 RDA
-- **BMR Calculation**: Integrated Mifflin-St Jeor BMR calculation
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Powered by Groq](https://img.shields.io/badge/AI-Groq%20%2F%20Llama%203.3-FF6B35?style=flat-square)](https://groq.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
-### Technical Highlights
-- **Modern Stack**: React + Node.js + Express + MongoDB
-- **AI-Powered**: AI-assisted meal selection via Groq API (Llama 3.3) with rule-based fallback
-- **Responsive UI**: Clean, professional design optimized for desktop and tablet clinical use
+<br/>
+
+</div>
 
 ---
 
-## 📁 Project Structure
+## ✦ What is VedaCare?
 
-```text
+Most diet management tools speak the language of calories and macros. VedaCare speaks Ayurveda.
+
+**The problem with existing clinical diet software:** It ignores Prakriti (body constitution), seasonal rhythms, and classical food compatibility rules — the very foundations of Ayurvedic nutrition. Dietitians are left reconciling two separate systems manually.
+
+**VedaCare bridges this gap.** It layers a full Ayurvedic intelligence engine — Dosha scoring, Viruddha Ahara detection, Ritucharya-aware adjustments — on top of a rigorous nutritional database (USDA SR Legacy + curated Indian foods). The result: a single platform where ancient principles and modern science work together, not against each other.
+
+---
+
+## 📸 Screenshots
+
+
+
+<table>
+  <tr>
+    <td align="center"><b>Admin Dashboard</b></td>
+    <td align="center"><b>Diet Chart Generator</b></td>
+  </tr>
+  <tr>
+    <td><img src="<img width="1920" height="1080" alt="Screenshot 2026-04-23 133855" src="https://github.com/user-attachments/assets/7d8de5c2-06b3-4d96-bd20-a7bdec443df4" />
+" alt="Admin Dashboard" width="100%"/></td>
+    <td><img src="<img width="1887" height="953" alt="image" src="https://github.com/user-attachments/assets/f4c2a37f-f758-4204-81f5-ccb51c3f3360" />
+" alt="Diet Chart Generator" width="100%"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Nutrient Analysis</b></td>
+    <td align="center"><b>Visits Display</b></td>
+  </tr>
+  <tr>
+    <td><img src="<img width="1889" height="958" alt="image" src="https://github.com/user-attachments/assets/445daea0-d9d2-4c87-ae24-af7e4d0a0ecb" />
+" alt="Nutrient Analysis" width="100%"/></td>
+    <td><img src="<img width="1888" height="950" alt="image" src="https://github.com/user-attachments/assets/5ddc78cc-45d3-4017-bab9-a5351b96ad81" />
+" alt="Visits Display" width="100%"/></td>
+  </tr>
+</table>
+
+---
+
+## ⚡ Features
+
+### 🧘 Ayurvedic Intelligence
+| Feature | Description |
+|---|---|
+| **AI Diet Generation** | Patient-specific diet charts generated via Llama 3.3 with a rule-based fallback |
+| **Dosha Compatibility** | Food scoring synced to each patient's Prakriti (Vata · Pitta · Kapha) |
+| **Viruddha Ahara Detection** | Real-time flagging of incompatible food combinations per classical texts |
+| **Dietary Filtering** | Adjustments based on Rasa, Guna, Virya, and Vipaka |
+| **Ritucharya Adjustments** | Dynamic seasonal recommendations across all six Ayurvedic seasons |
+
+### 🏥 Clinical Workflow
+| Feature | Description |
+|---|---|
+| **Patient Management** | Register, track, and manage complete patient profiles and history |
+| **Multi-role Access** | Admin, Doctor, and Dietitian dashboards with clinic-scoped data isolation |
+| **Diet Chart Export** | One-click PDF generation for patient handouts |
+| **Manual Overrides** | Edit any generated diet with instant nutrition recalculation |
+
+### 🔬 Nutritional Science
+| Feature | Description |
+|---|---|
+| **Dual Database** | 57 curated Indian dishes + full USDA SR Legacy 2018 (~7,793 items) |
+| **Real-time Nutrient Tracking** | Macro & micronutrients benchmarked against ICMR 2020 RDA |
+| **BMR Calculation** | Mifflin-St Jeor equation integrated into diet targets |
+
+---
+
+## 🏗️ Architecture
+
+```
 VedaCare/
-├── backend/             # Node.js + Express API
-│   ├── src/
-│   │   ├── controllers/ # Route handlers
-│   │   ├── models/      # Mongoose schemas
-│   │   ├── routes/      # API endpoints
-│   │   ├── middleware/  # Auth & Validation
-│   │   └── utils/       # Ayurvedic rule engine, diet generation
-├── frontend/            # React 18 + Vite frontend
-│   ├── src/
-│   │   ├── api/         # Axios API clients
-│   │   ├── components/  # Reusable UI elements
-│   │   ├── pages/       # Dashboard, Patient, Diet Planner
-│   │   └── context/     # Global state management
-├── data/                # Local datasets (USDA, Indian Foods)
-└── project documents/   # Project documentation and reports
+├── backend/                  # Node.js + Express API
+│   └── src/
+│       ├── controllers/      # Route handlers
+│       ├── models/           # Mongoose schemas
+│       ├── routes/           # API endpoints
+│       ├── middleware/        # Auth & validation
+│       └── utils/            # Ayurvedic rule engine · diet generation
+│
+├── frontend/                 # React 18 + Vite
+│   └── src/
+│       ├── api/              # Axios API clients
+│       ├── components/       # Reusable UI elements
+│       ├── pages/            # Dashboard · Patient · Diet Planner
+│       └── context/          # Global state (React Context)
+│
+├── data/                     # Local datasets (USDA · Indian Foods)
+└── docs/                     # Documentation & reports
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js 18+**
-- **MongoDB** (local or Atlas)
-- **Groq API Key** (optional — falls back to rule-based if not set)
 
-### Backend Setup
+- **Node.js** `v18+`
+- **MongoDB** (local instance or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas))
+- **Groq API Key** *(optional — system falls back to rule-based generation)*
 
-1. **Navigate to backend:**
+---
+
+### 1 · Clone the repository
+
 ```bash
-cd backend
+git clone https://github.com/your-username/vedacare.git
+cd vedacare
 ```
 
-2. **Install dependencies:**
+### 2 · Backend setup
+
 ```bash
+cd backend
 npm install
 ```
 
-3. **Configure environment:**
-Create a `.env` file in the `backend` directory with the following variables:
+Create a `.env` file inside `backend/`:
+
 ```env
 MONGO_URI=mongodb://localhost:27017/vedacare
 JWT_SECRET=your_secure_random_string_min_32_chars
 FRONTEND_URL=http://localhost:5173
 PORT=5000
-```
-*(Optional: Add `GROQ_API_KEY` and `GROQ_MODEL` for AI meal generation)*
 
-4. **Start backend server:**
-```bash
-npm start
-```
-*(Or use `npm run dev` for nodemon development server)*
-
-Backend runs at: `http://localhost:5000`
-
-### Frontend Setup
-
-1. **Navigate to frontend:**
-```bash
-cd frontend
+# Optional — enables AI meal generation
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-2. **Install dependencies:**
 ```bash
+npm start          # production
+npm run dev        # development (nodemon)
+```
+
+Backend runs at → `http://localhost:5000`
+
+---
+
+### 3 · Frontend setup
+
+```bash
+cd ../frontend
 npm install
 ```
 
-3. **Configure environment:**
-Create a `.env` file in the `frontend` directory:
+Create a `.env` file inside `frontend/`:
+
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
-4. **Start development server:**
 ```bash
 npm run dev
 ```
 
-Frontend runs at: `http://localhost:5173`
+Frontend runs at → `http://localhost:5173`
 
 ---
 
-## 🌐 Environment Variables
-
-### Backend (`backend/.env`)
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/vedacare` |
-| `JWT_SECRET` | Secret for JWT tokens (32+ chars) | `your-secret-key-12345` |
-| `FRONTEND_URL` | Allowed CORS origin | `http://localhost:5173` |
-| `PORT` | API Server port | `5000` |
-| `GROQ_API_KEY` | Groq API key for AI | `gsk_...` |
-| `GROQ_MODEL` | Groq model selection | `llama-3.3-70b-versatile` |
-
-### Frontend (`frontend/.env`)
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL base | `http://localhost:5000` |
-
----
-
-## 🎨 Tech Stack
+## 🌐 Environment Variables Reference
 
 ### Backend
-- **Node.js** & **Express** - Fast, unopinionated web framework
-- **MongoDB** & **Mongoose** - Document database and Object Data Modeling
-- **Groq** - LLM API for intelligent meal generation
-- **JWT** - Secure stateless authentication
-- **Bcrypt** - Password hashing securely
+
+| Variable | Required | Description |
+|---|---|---|
+| `MONGO_URI` | ✅ | MongoDB connection string |
+| `JWT_SECRET` | ✅ | JWT signing secret (32+ characters) |
+| `FRONTEND_URL` | ✅ | Allowed CORS origin |
+| `PORT` | ✅ | API server port |
+| `GROQ_API_KEY` | ⬜ | Groq API key for AI generation |
+| `GROQ_MODEL` | ⬜ | Groq model name |
 
 ### Frontend
-- **React 18** - UI library
-- **Vite** - Next-generation frontend tooling
-- **Tailwind CSS** - Utility-first styling framework
-- **React Router** - Client-side routing
-- **Axios** - Promise-based HTTP client
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_API_URL` | ✅ | Base URL of the backend API |
 
 ---
 
-## 📖 Usage
+## 🛠️ Tech Stack
 
-1. **Register/Login** as an Admin or Doctor at `http://localhost:5173`
-2. **Setup Clinic** — Configure your clinic details and add practitioners
-3. **Register Patient** — Input patient vitals, medical history, and Prakriti
-4. **Generate Diet** — Use the AI engine or manual selection to create a customized Ayurvedic diet chart
-5. **Review Incompatibilities** — The system automatically flags *Viruddha Ahara* (incompatible foods) 
-6. **Track Nutrition** — Verify the macro and micronutrient breakdown
-7. **Export & Print** — Generate a professional PDF handout for the patient
+<table>
+  <tr>
+    <th>Layer</th>
+    <th>Technology</th>
+  </tr>
+  <tr>
+    <td><b>Frontend</b></td>
+    <td>React 18 · Vite · Tailwind CSS · React Router · Axios</td>
+  </tr>
+  <tr>
+    <td><b>Backend</b></td>
+    <td>Node.js · Express</td>
+  </tr>
+  <tr>
+    <td><b>Database</b></td>
+    <td>MongoDB · Mongoose</td>
+  </tr>
+  <tr>
+    <td><b>AI / LLM</b></td>
+    <td>Groq API · Llama 3.3 70B (with rule-based fallback)</td>
+  </tr>
+  <tr>
+    <td><b>Auth</b></td>
+    <td>JWT · Bcrypt</td>
+  </tr>
+  <tr>
+    <td><b>Data Sources</b></td>
+    <td>USDA SR Legacy 2018 · ICMR 2020 RDA · Custom Indian Foods DB</td>
+  </tr>
+</table>
 
 ---
 
-## 🔒 Security Features
+## 🔒 Security
 
-- **JWT-based authentication**
-- **Bcrypt password hashing**
-- **Role-Based Access Control (RBAC)** (Admin, Doctor, Dietitian)
-- **Clinic-Scoped Data Isolation** to protect patient privacy
-- **CORS configuration**
-- **Environment variable protection**
+- **JWT-based stateless authentication**
+- **Bcrypt password hashing** (adaptive cost factor)
+- **Role-Based Access Control** — Admin · Doctor · Dietitian
+- **Clinic-scoped data isolation** — practitioners only access their own clinic's records
+- **CORS whitelisting** via environment configuration
+- **No secrets in source** — all sensitive values managed via `.env`
+
+---
+
+## 📖 Usage Walkthrough
+
+```
+1. Register / Login     →  Create an account as Admin or Doctor
+2. Setup Clinic         →  Configure clinic details, add practitioners
+3. Register Patient     →  Input vitals, medical history, and Prakriti type
+4. Generate Diet        →  AI engine or manual selection builds a personalised diet chart
+5. Review Flags         →  System highlights any Viruddha Ahara (incompatible) combinations
+6. Track Nutrition      →  Verify macro & micronutrient breakdown against ICMR RDA
+7. Export & Print       →  Download a professional PDF handout for the patient
+```
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Contributions are welcome! Here's how to get started:
+
+```bash
+# 1. Fork the repository
+# 2. Create your feature branch
+git checkout -b feature/your-feature-name
+
+# 3. Commit your changes
+git commit -m "feat: add your feature description"
+
+# 4. Push to your branch
+git push origin feature/your-feature-name
+
+# 5. Open a Pull Request
+```
+
+Please follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
 
 ---
 
-**Bridging ancient Ayurvedic wisdom with modern nutritional science.**
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+<br/>
+
+Made with 🌿 by the VedaCare Team
+
+<br/>
+
+*Ancient wisdom. Modern science. One platform.*
+
+</div>
