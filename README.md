@@ -45,20 +45,16 @@ Most diet management tools speak the language of calories and macros. VedaCare s
     <td align="center"><b>Diet Chart Generator</b></td>
   </tr>
   <tr>
-    <td><img src="<img width="1920" height="1080" alt="Screenshot 2026-04-23 133855" src="https://github.com/user-attachments/assets/7d8de5c2-06b3-4d96-bd20-a7bdec443df4" />
-" alt="Admin Dashboard" width="100%"/></td>
-    <td><img src="<img width="1887" height="953" alt="image" src="https://github.com/user-attachments/assets/f4c2a37f-f758-4204-81f5-ccb51c3f3360" />
-" alt="Diet Chart Generator" width="100%"/></td>
+    <td><img src="https://github.com/user-attachments/assets/7d8de5c2-06b3-4d96-bd20-a7bdec443df4" alt="Admin Dashboard" width="100%"/></td>
+    <td><img src="https://github.com/user-attachments/assets/f4c2a37f-f758-4204-81f5-ccb51c3f3360" alt="Diet Chart Generator" width="100%"/></td>
   </tr>
   <tr>
     <td align="center"><b>Nutrient Analysis</b></td>
     <td align="center"><b>Visits Display</b></td>
   </tr>
   <tr>
-    <td><img src="<img width="1889" height="958" alt="image" src="https://github.com/user-attachments/assets/445daea0-d9d2-4c87-ae24-af7e4d0a0ecb" />
-" alt="Nutrient Analysis" width="100%"/></td>
-    <td><img src="<img width="1888" height="950" alt="image" src="https://github.com/user-attachments/assets/5ddc78cc-45d3-4017-bab9-a5351b96ad81" />
-" alt="Visits Display" width="100%"/></td>
+    <td><img src="https://github.com/user-attachments/assets/445daea0-d9d2-4c87-ae24-af7e4d0a0ecb" alt="Nutrient Analysis" width="100%"/></td>
+    <td><img src="https://github.com/user-attachments/assets/5ddc78cc-45d3-4017-bab9-a5351b96ad81" alt="Visits Display" width="100%"/></td>
   </tr>
 </table>
 
