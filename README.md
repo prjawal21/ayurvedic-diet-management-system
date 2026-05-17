@@ -45,7 +45,7 @@ Most diet management tools speak the language of calories and macros. VedaCare s
     <td align="center"><b>Diet Chart Generator</b></td>
   </tr>
   <tr>
-    <td><img src="https://github.com/user-attachments/assets/7d8de5c2-06b3-4d96-bd20-a7bdec443df4" alt="Admin Dashboard" width="100%"/></td>
+    <td><img src="https://github.com/user-attachments/assets/b6823277-f1bf-41e2-9d8d-ac23849011b2" alt="Admin Dashboard" width="100%"/></td>
     <td><img src="https://github.com/user-attachments/assets/f4c2a37f-f758-4204-81f5-ccb51c3f3360" alt="Diet Chart Generator" width="100%"/></td>
   </tr>
   <tr>
